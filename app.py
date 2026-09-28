@@ -20,7 +20,8 @@ st.markdown("""
     }
     .stButton>button:hover { background-color: #e05300; color: white; }
     </style>
-""", unsafe_allowed_html=True)
+""", unsafe_allow_html=True)
+
 
 # Sessiebeheer (Gegevensopslag binnen de sessie)
 if 'logged_in' not in st.session_state:
