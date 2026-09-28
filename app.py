@@ -76,7 +76,7 @@ if 'logged_in' not in st.session_state:
 if 'pin_input' not in st.session_state:
     st.session_state.pin_input = ""
 if 'saldo_betaal' not in st.session_state:
-    st.session_state.saldo_betaal = 123.89  # Aangepast naar jouw foto!
+    st.session_state.saldo_betaal = 123.89
 if 'saldo_spaar' not in st.session_state:
     st.session_state.saldo_spaar = 5000.00
 if 'transacties' not in st.session_state:
@@ -89,11 +89,9 @@ if 'stap' not in st.session_state:
 
 # SCHERM 1: BLAUW PINCODE INLOGSCHERM
 if not st.session_state.logged_in:
-    # Gecentreerde container maken
-    col_space1, col_content, col_space2 = st.columns([1, 6, 1])
+    col_space1, col_content, col_space2 = st.columns([1, 4, 1])
     
     with col_content:
-        # Weergave van de ingevulde rondjes
         ingevuld = len(st.session_state.pin_input)
         rondjes = "● " * ingevuld + "○ " * (5 - ingevuld)
         
@@ -103,9 +101,8 @@ if not st.session_state.logged_in:
                 <div class="login-subtitle">Voer uw 5-cijferige toegangscode in</div>
                 <div class="pin-dots">{rondjes}</div>
             </div>
-        """, unsafe_allowed_html=True)
+        """, unsafe_allow_html=True)
         
-        # Cijfertoetsenbord bouwen (3 kolommen per rij)
         st.write("")
         c1, c2, c3 = st.columns(3)
         
@@ -124,7 +121,6 @@ if not st.session_state.logged_in:
             if st.button("6", key="btn6"): st.session_state.pin_input += "6"; st.rerun()
             if st.button("9", key="btn9"): st.session_state.pin_input += "9"; st.rerun()
             
-        # Pincode controle (Pincode is nu 5 cijfers: 12345)
         if len(st.session_state.pin_input) == 5:
             if st.session_state.pin_input == "12345":
                 st.session_state.logged_in = True
@@ -150,34 +146,29 @@ else:
 
     tab1, tab2 = st.tabs(["Overzicht", "Geld Overmaken"])
 
-    # TAB 1: REKENINGOVERSZICHT (Met witte kaarten-stijl)
     with tab1:
         st.write("")
-        
-        # Betaalrekening Kaart
         st.markdown(f"""
             <div class="rabo-card">
                 <div class="card-label">Rabo Betaalrekening</div>
                 <div class="card-value">€ {st.session_state.saldo_betaal:.2f}</div>
                 <div style="color: #94a3b8; font-size: 12px; margin-top:5px;">NL81 RABO 0334 8172 93</div>
             </div>
-        """, unsafe_allowed_html=True)
+        """, unsafe_allow_html=True)
         
-        # Spaarrekening Kaart
         st.markdown(f"""
             <div class="rabo-card">
                 <div class="card-label">Rabo Spaarrekening</div>
                 <div class="card-value">€ {st.session_state.saldo_spaar:.2f}</div>
                 <div style="color: #94a3b8; font-size: 12px; margin-top:5px;">NL92 RABO 0772 1948 41</div>
             </div>
-        """, unsafe_allowed_html=True)
+        """, unsafe_allow_html=True)
         
         st.markdown("<h3 style='color: #002d62; font-size: 18px; margin-top: 25px;'>Transacties</h3>", unsafe_allow_html=True)
         df_transacties = pd.DataFrame(st.session_state.transacties)
         df_transacties['Bedrag'] = df_transacties['Bedrag'].map(lambda x: f"€ {x:.2f}" if x >= 0 else f"- € {abs(x):.2f}")
         st.dataframe(df_transacties, use_container_width=True, hide_index=True)
 
-    # TAB 2: GELD OVERMAKEN
     with tab2:
         st.write("")
         if st.session_state.stap == "invoeren":
@@ -199,7 +190,6 @@ else:
                         st.session_state.stap = "scanner"
                         st.rerun()
 
-        # Rabo Scanner verificatiescherm
         elif st.session_state.stap == "scanner":
             st.markdown("<div class='rabo-card' style='border-left: 4px solid #ef4444;'><strong>Beveiliging</strong><br>Plaats uw pas in de Rabo Scanner om de overboeking te ondertekenen.</div>", unsafe_allow_html=True)
             t = st.session_state.temp_transactie
