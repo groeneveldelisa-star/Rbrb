@@ -55,7 +55,8 @@ if not st.session_state.logged_in:
 
 # SCHERM 2: DASHBOARD (INGELOGD)
 else:
-    col_logo, col_logout = st.columns()
+        col_logo, col_logout = st.columns(2)
+
     with col_logo:
         st.title("🍊 Mijn Rabo")
     with col_logout:
