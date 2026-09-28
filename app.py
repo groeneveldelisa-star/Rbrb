@@ -22,7 +22,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
 # Sessiebeheer (Gegevensopslag binnen de sessie)
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -35,6 +34,8 @@ if 'transacties' not in st.session_state:
         {"Datum": "28-09-2026", "Naam/Omschrijving": "Albert Heijn", "Rekening": "NL81RABO0334817293", "Bedrag": -34.20},
         {"Datum": "25-09-2026", "Naam/Omschrijving": "Salaris Werkgever", "Rekening": "NL23INGB0411928374", "Bedrag": 1450.00}
     ]
+if 'stap' not in st.session_state:
+    st.session_state.stap = "invoeren"
 
 # SCHERM 1: INLOGGEN
 if not st.session_state.logged_in:
@@ -55,13 +56,14 @@ if not st.session_state.logged_in:
 
 # SCHERM 2: DASHBOARD (INGELOGD)
 else:
-        col_logo, col_logout = st.columns(2)
-
+    col_logo, col_logout = st.columns(2)
     with col_logo:
         st.title("🍊 Mijn Rabo")
     with col_logout:
+        st.write("")  
         if st.button("Uitloggen"):
             st.session_state.logged_in = False
+            st.session_state.stap = "invoeren"
             st.rerun()
 
     tab1, tab2 = st.tabs(["📊 Overzicht", "💸 Geld Overmaken"])
@@ -82,42 +84,52 @@ else:
     with tab2:
         st.subheader("Nieuwe overboeking")
         
-        with st.form("overboeking_form"):
-            naam = st.text_input("Naam ontvanger")
-            iban = st.text_input("IBAN (Rekeningnummer)")
-            bedrag = st.number_input("Bedrag (€)", min_value=0.01, format="%.2f")
-            omschrijving = st.text_input("Omschrijving")
-            
-            verzenden = st.form_submit_button("Overboeking controleren")
-            
-            if verzenden:
-                if not naam or not iban:
-                    st.error("Vul alle verplichte velden in.")
-                elif bedrag > st.session_state.saldo_betaal:
-                    st.error("⚠️ Saldo onvoldoende op uw Rabo Betaalrekening.")
-                else:
-                    st.session_state.temp_transactie = {"naam": naam, "iban": iban, "bedrag": bedrag, "omschrijving": omschrijving}
-                    st.session_state.stap = "scanner"
+        if st.session_state.stap == "invoeren":
+            with st.form("overboeking_form"):
+                naam = st.text_input("Naam ontvanger")
+                iban = st.text_input("IBAN (Rekeningnummer)")
+                bedrag = st.number_input("Bedrag (€)", min_value=0.01, format="%.2f")
+                omschrijving = st.text_input("Omschrijving")
+                
+                verzenden = st.form_submit_button("Overboeking controleren")
+                
+                if verzenden:
+                    if not naam or not iban:
+                        st.error("Vul alle verplichte velden in.")
+                    elif bedrag > st.session_state.saldo_betaal:
+                        st.error("⚠️ Saldo onvoldoende op uw Rabo Betaalrekening.")
+                    else:
+                        st.session_state.temp_transactie = {"naam": naam, "iban": iban, "bedrag": bedrag, "omschrijving": omschrijving}
+                        st.session_state.stap = "scanner"
+                        st.rerun()
 
-        # Rabo Scanner verificatie
-        if 'stap' in st.session_state and st.session_state.stap == "scanner":
+        # Rabo Scanner verificatiescherm
+        elif st.session_state.stap == "scanner":
             st.warning("🔒 **Rabo Scanner**")
+            t = st.session_state.temp_transactie
+            st.write(f"U maakt **€ {t['bedrag']:.2f}** over naar **{t['naam']}** ({t['iban']}).")
             st.write("Plaats uw Rabo Wereldpas in de Rabo Scanner en genereer een signeercode.")
             
-            rabo_code = st.text_input("Signiércode (8 cijfers)", type="password")
-            if st.button("Bevestig met Rabo Scanner"):
-                if rabo_code == "9999":
-                    t = st.session_state.temp_transactie
-                    st.session_state.saldo_betaal -= t['bedrag']
-                    st.session_state.transacties.insert(0, {
-                        "Datum": datetime.now().strftime("%d-%m-%Y"),
-                        "Naam/Omschrijving": t['naam'],
-                        "Rekening": t['iban'],
-                        "Bedrag": -float(t['bedrag'])
-                    })
-                    st.success("De overboeking is succesvol verwerkt.")
-                    time.sleep(1.5)
-                    del st.session_state.stap
-                    st.rerun()
-                else:
-                    st.error("De ingevoerde signeercode is onjuist. Probeer het opnieuw.")
+            with st.form("scanner_form"):
+                rabo_code = st.text_input("Signeercode (8 cijfers)", type="password")
+                bevestig = st.form_submit_button("Bevestig met Rabo Scanner")
+                
+                if bevestig:
+                    if rabo_code == "9999":
+                        st.session_state.saldo_betaal -= t['bedrag']
+                        st.session_state.transacties.insert(0, {
+                            "Datum": datetime.now().strftime("%d-%m-%Y"),
+                            "Naam/Omschrijving": t['naam'],
+                            "Rekening": t['iban'],
+                            "Bedrag": -float(t['bedrag'])
+                        })
+                        st.success("De overboeking is succesvol verwerkt.")
+                        time.sleep(1.5)
+                        st.session_state.stap = "invoeren"
+                        st.rerun()
+                    else:
+                        st.error("De ingevoerde signeercode is onjuist. Probeer het opnieuw.")
+            
+            if st.button("Annuleren"):
+                st.session_state.stap = "invoeren"
+                st.rerun()
